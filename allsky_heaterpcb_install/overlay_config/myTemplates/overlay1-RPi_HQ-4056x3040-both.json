@@ -1,0 +1,339 @@
+{
+    "fields": [
+        {
+            "label": "${DATE}  ${TIME}",
+            "x": 400,
+            "y": 35,
+            "id": "datetime-txt",
+            "format": "{%d-%m-%Y}{%H:%M:%S}",
+            "strokewidth": 0,
+            "sample": "DATE,TIME",
+            "tlx": 20,
+            "tly": 8,
+            "fill": "#ffffff",
+            "fontsize": 56
+        },
+        {
+            "label": "Dome:  ${HP_TEMP_DOME}°C  DP ${HP_DEWPOINT_DOME}°C  Hum ${HP_HUMIDITY_DOME}%  ${HP_PRES_DOME}hPa  Soll ${HP_SETPOINT}°C",
+            "x": 400,
+            "y": 105,
+            "id": "dome-txt",
+            "fontsize": 28,
+            "strokewidth": 0,
+            "tlx": 20,
+            "tly": 100,
+            "fill": "#00ffff"
+        },
+        {
+            "label": "Housing: ${HP_TEMP_HOUSING}°C  DP ${HP_DEWPOINT_HOUSING}°C  Hum ${HP_HUMIDITY_HOUSING}%  ${HP_PRES_HOUSING}hPa",
+            "x": 600,
+            "y": 147,
+            "id": "housing-txt",
+            "fontsize": 28,
+            "strokewidth": 0,
+            "tlx": 20,
+            "tly": 142,
+            "fill": "#88ddff"
+        },
+        {
+            "label": "Heater: ${HP_HEATER_DUTY}%  ${HP_BAR_HEATER}",
+            "x": 350,
+            "y": 189,
+            "id": "heiz-heater",
+            "fontsize": 28,
+            "strokewidth": 0,
+            "tlx": 20,
+            "tly": 184,
+            "fill": "#00ff00"
+        },
+        {
+            "label": "Fan:    ${HP_FAN_DUTY}%  ${HP_BAR_FAN}",
+            "x": 350,
+            "y": 231,
+            "id": "heiz-fan",
+            "fontsize": 28,
+            "strokewidth": 0,
+            "tlx": 20,
+            "tly": 226,
+            "fill": "#00ff00"
+        },
+        {
+            "label": "TSL",
+            "x": 20,
+            "y": 265,
+            "id": "tsl-hdr",
+            "fontsize": 28,
+            "strokewidth": 0,
+            "fill": "#ffff00"
+        },
+        {
+            "label": "Lux ${HP_LUX}  IR ${HP_TSL_INFRARED}  Vis ${HP_TSL_VISIBLE}",
+            "x": 20,
+            "y": 307,
+            "id": "tsl-lux",
+            "fontsize": 28,
+            "strokewidth": 0,
+            "fill": "#ffff00"
+        },
+        {
+            "label": "Gain G${HP_TSL_GAIN}x   ${HP_BAR_TSL_GAIN}",
+            "x": 20,
+            "y": 349,
+            "id": "tsl-gain",
+            "fontsize": 28,
+            "strokewidth": 0,
+            "fill": "#ffff00"
+        },
+        {
+            "label": "Atime ${HP_TSL_ATIME}ms   ${HP_BAR_TSL_ATIME}",
+            "x": 20,
+            "y": 387,
+            "id": "tsl-atime",
+            "fontsize": 28,
+            "strokewidth": 0,
+            "fill": "#ffff00"
+        },
+        {
+            "label": "TCS",
+            "x": 20,
+            "y": 425,
+            "id": "tcs-hdr",
+            "fontsize": 28,
+            "strokewidth": 0,
+            "fill": "#ffcc00"
+        },
+        {
+            "label": "Gain G${HP_TCS_GAIN}      ${HP_BAR_TCS_GAIN}",
+            "x": 20,
+            "y": 463,
+            "id": "tcs-gain",
+            "fontsize": 28,
+            "strokewidth": 0,
+            "fill": "#ffcc00"
+        },
+        {
+            "label": "Atime ${HP_TCS_ATIME} St  ${HP_BAR_TCS_ATIME}",
+            "x": 20,
+            "y": 501,
+            "id": "tcs-atime",
+            "fontsize": 28,
+            "strokewidth": 0,
+            "fill": "#ffcc00"
+        },
+        {
+            "label": "F1:  ${HP_TCS_F1}    ${HP_BAR_F1}",
+            "x": 20,
+            "y": 539,
+            "id": "tcs-f1",
+            "fontsize": 26,
+            "strokewidth": 0,
+            "fill": "#9C27B0"
+        },
+        {
+            "label": "F2:  ${HP_TCS_F2}    ${HP_BAR_F2}",
+            "x": 20,
+            "y": 577,
+            "id": "tcs-f2",
+            "fontsize": 26,
+            "strokewidth": 0,
+            "fill": "#5C6BC0"
+        },
+        {
+            "label": "F3:  ${HP_TCS_F3}    ${HP_BAR_F3}",
+            "x": 20,
+            "y": 615,
+            "id": "tcs-f3",
+            "fontsize": 26,
+            "strokewidth": 0,
+            "fill": "#00BCD4"
+        },
+        {
+            "label": "F4:  ${HP_TCS_F4}    ${HP_BAR_F4}",
+            "x": 20,
+            "y": 653,
+            "id": "tcs-f4",
+            "fontsize": 26,
+            "strokewidth": 0,
+            "fill": "#4CAF50"
+        },
+        {
+            "label": "F5:  ${HP_TCS_F5}    ${HP_BAR_F5}",
+            "x": 20,
+            "y": 691,
+            "id": "tcs-f5",
+            "fontsize": 26,
+            "strokewidth": 0,
+            "fill": "#8BC34A"
+        },
+        {
+            "label": "F6:  ${HP_TCS_F6}    ${HP_BAR_F6}",
+            "x": 20,
+            "y": 729,
+            "id": "tcs-f6",
+            "fontsize": 26,
+            "strokewidth": 0,
+            "fill": "#FF9800"
+        },
+        {
+            "label": "F7:  ${HP_TCS_F7}    ${HP_BAR_F7}",
+            "x": 20,
+            "y": 767,
+            "id": "tcs-f7",
+            "fontsize": 26,
+            "strokewidth": 0,
+            "fill": "#F44336"
+        },
+        {
+            "label": "F8:  ${HP_TCS_F8}    ${HP_BAR_F8}",
+            "x": 20,
+            "y": 805,
+            "id": "tcs-f8",
+            "fontsize": 26,
+            "strokewidth": 0,
+            "fill": "#B71C1C"
+        },
+        {
+            "label": "INA: ${HP_VOLTAGE}V  ${HP_CURRENT}mA  ${HP_POWER_MW}mW",
+            "x": 400,
+            "y": 869,
+            "id": "ina-txt",
+            "fontsize": 28,
+            "strokewidth": 0,
+            "tlx": 20,
+            "tly": 837,
+            "fill": "#ffaa00"
+        },
+        {
+            "label": "Blitz: ${HP_LIGHTNING_COUNT}  Dist ${HP_LAST_DISTANCE} km  Energy ${HP_LAST_ENERGY}",
+            "x": 400,
+            "y": 911,
+            "id": "blitz-txt",
+            "fontsize": 28,
+            "strokewidth": 0,
+            "tlx": 20,
+            "tly": 879,
+            "fill": "#ff6600"
+        },
+        {
+            "label": "${CAMERA_TYPE}  ${CAMERA_MODEL}",
+            "x": 4056,
+            "y": 100,
+            "id": "cam1",
+            "align": "right",
+            "fontsize": 36,
+            "strokewidth": 0,
+            "fill": "#ffffff"
+        },
+        {
+            "label": "Exposure: ${sEXPOSURE}",
+            "x": 4056,
+            "y": 140,
+            "id": "cam2",
+            "align": "right",
+            "fontsize": 32,
+            "strokewidth": 0,
+            "fill": "#ccccff"
+        },
+        {
+            "label": "Gain: ${GAIN}",
+            "x": 4056,
+            "y": 180,
+            "id": "cam3",
+            "align": "right",
+            "format": "{:.2f}",
+            "fontsize": 32,
+            "strokewidth": 0,
+            "fill": "#ccccff"
+        },
+        {
+            "label": "Mean: ${MEAN}",
+            "x": 4056,
+            "y": 220,
+            "id": "cam4",
+            "align": "right",
+            "format": "{:.2f}",
+            "fontsize": 32,
+            "strokewidth": 0,
+            "fill": "#aaccff"
+        },
+        {
+            "label": "Binning: ${BIN}",
+            "x": 4056,
+            "y": 260,
+            "id": "cam5",
+            "align": "right",
+            "fontsize": 32,
+            "strokewidth": 0,
+            "fill": "#aaccff"
+        },
+        {
+            "label": "CPU:   ${HP_PI_CPU_TEMP}°C  ${HP_BAR_CPU_TEMP}",
+            "x": 20,
+            "y": 923,
+            "id": "pi1-txt",
+            "fontsize": 28,
+            "strokewidth": 0,
+            "fill": "#aaffaa"
+        },
+        {
+            "label": "Disk:  ${HP_PI_DISK_PERCENT}%   ${HP_BAR_DISK}",
+            "x": 20,
+            "y": 965,
+            "id": "pi2-txt",
+            "fontsize": 28,
+            "strokewidth": 0,
+            "fill": "#aaffaa"
+        },
+        {
+            "label": "Mem:   ${HP_PI_MEM_PERCENT}%   ${HP_BAR_MEM}",
+            "x": 20,
+            "y": 1007,
+            "id": "pi3-txt",
+            "fontsize": 28,
+            "strokewidth": 0,
+            "fill": "#aaffaa"
+        },
+        {
+            "label": "Load:  ${HP_PI_CPU_USAGE}%   ${HP_BAR_CPU_USAGE}",
+            "x": 20,
+            "y": 1049,
+            "id": "pi4-txt",
+            "fontsize": 28,
+            "strokewidth": 0,
+            "fill": "#aaffaa"
+        }
+    ],
+    "images": [],
+    "settings": {
+        "defaultdatafileexpiry": "550",
+        "defaultincludeplanets": false,
+        "defaultincludesun": false,
+        "defaultincludemoon": false,
+        "defaultimagetopacity": 0.63,
+        "defaultimagerotation": 0,
+        "defaulttextrotation": 0,
+        "defaultfontopacity": 1,
+        "defaultfontcolour": "white",
+        "defaultfont": "Arial",
+        "defaultfontsize": 52,
+        "defaultimagescale": 1,
+        "defaultnoradids": ""
+    },
+    "fonts": {
+        "moon_phases": {
+            "fontPath": "fonts/moon_phases.ttf",
+            "fonttcolour": "red",
+            "backgroundcolor": "white",
+            "fontopacity": 0.5
+        }
+    },
+    "metadata": {
+        "name": "Heater_Plus",
+        "description": "Platine oben links, Kamera oben rechts, RPi unten links",
+        "camerabrand": "RPi",
+        "cameramodel": "HQ",
+        "cameraresolutionwidth": "4056",
+        "cameraresolutionheight": "3040",
+        "tod": "both"
+    }
+}

@@ -416,7 +416,50 @@ install_allsky_integration() {
         echo '{"HP_TEMP_DOME":{"value":"--","expires":60}}' > "$OVERLAY_EXTRA/heater_plus.json"
     fi
 
-    # Overlay-Template: optional aus allsky_config (Nutzer konfiguriert ggf. in Allsky-GUI)
+    # Overlay-Templates und userfields installieren
+    local OVERLAY_CONFIG_SRC="${SCRIPT_DIR}/overlay_config"
+    [[ ! -d "$OVERLAY_CONFIG_SRC" ]] && OVERLAY_CONFIG_SRC="$(dirname "$SCRIPT_DIR")/overlay_config"
+    local OVERLAY_CONFIG_DST="${ALLSKY_CONFIG}/overlay/config"
+    if [[ -d "$OVERLAY_CONFIG_SRC" ]]; then
+        mkdir -p "$OVERLAY_CONFIG_DST" "$OVERLAY_TEMPLATES"
+        # userfields.json: HeaterPlus-Felder mergen
+        if [[ -f "$OVERLAY_CONFIG_SRC/config/userfields.json" ]]; then
+            python3 << PYEOF
+import json
+dst_path = "$OVERLAY_CONFIG_DST/userfields.json"
+src_path = "$OVERLAY_CONFIG_SRC/config/userfields.json"
+try:
+    with open(dst_path) as f:
+        existing = json.load(f)
+except (FileNotFoundError, json.JSONDecodeError):
+    existing = {"data": []}
+with open(src_path) as f:
+    hp_data = json.load(f)
+hp_ids = {e["id"] for e in hp_data.get("data", [])}
+merged = [e for e in existing.get("data", []) if e.get("id") not in hp_ids]
+merged.extend(hp_data.get("data", []))
+merged.sort(key=lambda x: x.get("id", 0))
+with open(dst_path, "w") as f:
+    json.dump({"data": merged}, f, separators=(",", ":"))
+PYEOF
+            log "[OK] userfields.json (HeaterPlus) installiert/gemerged"
+        fi
+        # Overlay-Configs kopieren
+        for f in overlay-RPi.json overlay-RPi_HQ-4056x3040-both.json; do
+            if [[ -f "$OVERLAY_CONFIG_SRC/config/$f" ]]; then
+                cp "$OVERLAY_CONFIG_SRC/config/$f" "$OVERLAY_CONFIG_DST/"
+                log "[OK] Overlay $f installiert"
+            fi
+        done
+        # Template nach myTemplates
+        if [[ -f "$OVERLAY_CONFIG_SRC/myTemplates/overlay1-RPi_HQ-4056x3040-both.json" ]]; then
+            cp "$OVERLAY_CONFIG_SRC/myTemplates/overlay1-RPi_HQ-4056x3040-both.json" "$OVERLAY_TEMPLATES/"
+            log "[OK] Heater+ Overlay-Template installiert (myTemplates)"
+        fi
+        chown -R pi:pi "$OVERLAY_CONFIG_DST" "$OVERLAY_TEMPLATES" 2>/dev/null || true
+    else
+        log "[INFO] overlay_config nicht gefunden, Overlay-Templates übersprungen"
+    fi
 
     # postprocessing_periodic.json
     local PERIODIC_JSON="${ALLSKY_MODULES:-$ALLSKY_CONFIG/modules}/postprocessing_periodic.json"

@@ -25,9 +25,3 @@ sudo reboot
 # Steuerscript starten
 cd ~/heater_plus && python3 heater_plus.py
 ```
-
-## Für dich (Repo-Besitzer)
-
-1. **install.sh** anpassen: `DEIN_USERNAME` durch deinen GitHub-Namen ersetzen
-2. Repo pushen
-3. Link an Tester schicken: `curl -sSL https://raw.githubusercontent.com/DEIN_USERNAME/heater_plus/main/install.sh | bash`

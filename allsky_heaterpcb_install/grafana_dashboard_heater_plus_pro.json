@@ -1,0 +1,330 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+      "id": 200,
+      "panels": [],
+      "title": "📊 Überblick – Heater+ Allsky",
+      "type": "row"
+    },
+    {
+      "datasource": {"type": "influxdb", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "celsius"}, "overrides": []},
+      "gridPos": {"h": 2, "w": 2, "x": 0, "y": 1},
+      "id": 101,
+      "options": {"colorMode": "thresholds", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value"},
+      "targets": [{"datasource": {"type": "influxdb", "uid": "${datasource}"}, "query": "from(bucket: \"heater_plus\") |> range(start: -5m) |> filter(fn: (r) => r._measurement == \"sensor_data\" and r.sensor == \"BME280\" and r._field == \"bme_temp_dome\") |> last() |> yield(name: \"last\")", "refId": "A"}],
+      "title": "Dome °C",
+      "type": "stat",
+      "description": "Dome-Innentemperatur. Soll > Taupunkt sein, idealerweise mind. 2–4°C darüber."
+    },
+    {
+      "datasource": {"type": "influxdb", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "celsius"}, "overrides": []},
+      "gridPos": {"h": 2, "w": 2, "x": 2, "y": 1},
+      "id": 102,
+      "options": {"colorMode": "thresholds", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value"},
+      "targets": [{"datasource": {"type": "influxdb", "uid": "${datasource}"}, "query": "from(bucket: \"heater_plus\") |> range(start: -5m) |> filter(fn: (r) => r._measurement == \"sensor_data\" and r.sensor == \"BME280\" and r._field == \"bme_dewp_dome\") |> last() |> yield(name: \"last\")", "refId": "A"}],
+      "title": "Taupunkt °C",
+      "type": "stat",
+      "description": "Taupunkt im Dome. Bei Annäherung an Dome-Temp → Kondensationsrisiko. Heizung sollte Dome-Temp darüber halten."
+    },
+    {
+      "datasource": {"type": "influxdb", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "celsius"}, "overrides": []},
+      "gridPos": {"h": 2, "w": 2, "x": 4, "y": 1},
+      "id": 103,
+      "options": {"colorMode": "thresholds", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value"},
+      "targets": [{"datasource": {"type": "influxdb", "uid": "${datasource}"}, "query": "from(bucket: \"heater_plus\") |> range(start: -5m) |> filter(fn: (r) => r._measurement == \"sensor_data\" and r.sensor == \"BME280\" and r._field == \"heaterplus_settemp\") |> last() |> yield(name: \"last\")", "refId": "A"}],
+      "title": "Setpoint °C",
+      "type": "stat",
+      "description": "Soll-Temperatur für die Heizung (oft am Taupunkt orientiert)."
+    },
+    {
+      "datasource": {"type": "influxdb", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 50}, {"color": "red", "value": 80}]}, "unit": "percent"}, "overrides": []},
+      "gridPos": {"h": 2, "w": 2, "x": 6, "y": 1},
+      "id": 104,
+      "options": {"colorMode": "thresholds", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value"},
+      "targets": [{"datasource": {"type": "influxdb", "uid": "${datasource}"}, "query": "from(bucket: \"heater_plus\") |> range(start: -5m) |> filter(fn: (r) => r._measurement == \"sensor_data\" and r.sensor == \"PWM\" and r._field == \"heater_duty\") |> last() |> yield(name: \"last\")", "refId": "A"}],
+      "title": "Heater %",
+      "type": "stat",
+      "description": "Heizungs-PWM (0–100%). Hohe Werte bei kaltem Wetter oder nahem Taupunkt."
+    },
+    {
+      "datasource": {"type": "influxdb", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "percent"}, "overrides": []},
+      "gridPos": {"h": 2, "w": 2, "x": 8, "y": 1},
+      "id": 105,
+      "options": {"colorMode": "thresholds", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value"},
+      "targets": [{"datasource": {"type": "influxdb", "uid": "${datasource}"}, "query": "from(bucket: \"heater_plus\") |> range(start: -5m) |> filter(fn: (r) => r._measurement == \"sensor_data\" and r.sensor == \"PWM\" and r._field == \"fan_duty\") |> last() |> yield(name: \"last\")", "refId": "A"}],
+      "title": "Fan %",
+      "type": "stat",
+      "description": "Lüfter-PWM. Unterstützt Durchmischung und Abtransport von Feuchtigkeit."
+    },
+    {
+      "datasource": {"type": "influxdb", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "lux"}, "overrides": []},
+      "gridPos": {"h": 2, "w": 2, "x": 10, "y": 1},
+      "id": 106,
+      "options": {"colorMode": "thresholds", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value"},
+      "targets": [{"datasource": {"type": "influxdb", "uid": "${datasource}"}, "query": "from(bucket: \"heater_plus\") |> range(start: -5m) |> filter(fn: (r) => r._measurement == \"sensor_data\" and r.sensor == \"tsl2591\" and r._field == \"tsl_lux\") |> last() |> yield(name: \"last\")", "refId": "A"}],
+      "title": "Lux",
+      "type": "stat",
+      "description": "Helligkeit (Lux). <1 = Nacht, >1000 = heller Tag."
+    },
+    {
+      "datasource": {"type": "influxdb", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "volt"}, "overrides": []},
+      "gridPos": {"h": 2, "w": 2, "x": 12, "y": 1},
+      "id": 107,
+      "options": {"colorMode": "thresholds", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value"},
+      "targets": [{"datasource": {"type": "influxdb", "uid": "${datasource}"}, "query": "from(bucket: \"heater_plus\") |> range(start: -5m) |> filter(fn: (r) => r._measurement == \"sensor_data\" and r.sensor == \"INA226\" and r._field == \"ina_vbus\") |> last() |> yield(name: \"last\")", "refId": "A"}],
+      "title": "Spannung",
+      "type": "stat",
+      "description": "Versorgungsspannung. Sollte stabil über 12V liegen."
+    },
+    {
+      "datasource": {"type": "influxdb", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 65}, {"color": "red", "value": 75}]}, "unit": "celsius"}, "overrides": []},
+      "gridPos": {"h": 2, "w": 2, "x": 14, "y": 1},
+      "id": 108,
+      "options": {"colorMode": "thresholds", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value"},
+      "targets": [{"datasource": {"type": "influxdb", "uid": "${datasource}"}, "query": "from(bucket: \"heater_plus\") |> range(start: -5m) |> filter(fn: (r) => r._measurement == \"rpi_status\" and r._field == \"pi_cpu_temp\") |> last() |> yield(name: \"last\")", "refId": "A"}],
+      "title": "Pi °C",
+      "type": "stat",
+      "description": "Raspberry-Pi CPU-Temperatur. >70°C = kritisch."
+    },
+    {
+      "datasource": {"type": "influxdb", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}, "unit": "short"}, "overrides": []},
+      "gridPos": {"h": 2, "w": 2, "x": 16, "y": 1},
+      "id": 109,
+      "options": {"colorMode": "thresholds", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value"},
+      "targets": [{"datasource": {"type": "influxdb", "uid": "${datasource}"}, "query": "from(bucket: \"heater_plus\") |> range(start: -5m) |> filter(fn: (r) => r._measurement == \"sensor_data\" and r.sensor == \"AS3935\" and r._field == \"as_lightning_count\") |> last() |> yield(name: \"last\")", "refId": "A"}],
+      "title": "Blitz",
+      "type": "stat",
+      "description": "Gewitter-Ereignisse (AS3935). >0 = Blitz erkannt."
+    },
+    {
+      "gridPos": {"h": 3, "w": 24, "x": 0, "y": 3},
+      "id": 201,
+      "options": {"content": "## 🌡️ Klima & Kondensation\n\n**Wichtig:** Dome-Temperatur muss **über** dem Taupunkt liegen (ideal 2–4°C Abstand). Wenn sich die Kurven annähern → Kondensationsrisiko. Die Heizung reagiert automatisch und erhöht die Leistung. Setpoint = Solltemperatur (oft am Taupunkt orientiert). Housing = Kamera-Gehäuse.", "mode": "markdown"},
+      "title": "Interpretation: Klima",
+      "type": "text"
+    },
+    {
+      "datasource": {"type": "influxdb", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5, "showPoints": "auto", "spanNulls": false, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "celsius"}, "overrides": [{"matcher": {"id": "byRegexp", "options": ".*bme_temp_dome.*"}, "properties": [{"id": "displayName", "value": "Dome Temp"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}}]}, {"matcher": {"id": "byRegexp", "options": ".*bme_temp_housing.*"}, "properties": [{"id": "displayName", "value": "Housing Temp"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "purple"}}]}, {"matcher": {"id": "byRegexp", "options": ".*bme_dewp_dome.*"}, "properties": [{"id": "displayName", "value": "Taupunkt Dome"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "cyan"}}]}, {"matcher": {"id": "byRegexp", "options": ".*bme_dewp_housing.*"}, "properties": [{"id": "displayName", "value": "Taupunkt Housing"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}}]}, {"matcher": {"id": "byRegexp", "options": ".*heaterplus_settemp.*"}, "properties": [{"id": "displayName", "value": "Setpoint"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]}]},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 6},
+      "id": 110,
+      "options": {"legend": {"calcs": ["lastNotNull", "mean"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [{"datasource": {"type": "influxdb", "uid": "${datasource}"}, "query": "from(bucket: \"heater_plus\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"sensor_data\" and r.sensor == \"BME280\" and (r._field == \"bme_temp_dome\" or r._field == \"bme_temp_housing\" or r._field == \"bme_dewp_dome\" or r._field == \"bme_dewp_housing\")) |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> yield(name: \"mean\")", "refId": "A"}, {"datasource": {"type": "influxdb", "uid": "${datasource}"}, "query": "from(bucket: \"heater_plus\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"sensor_data\" and r.sensor == \"BME280\" and r._field == \"heaterplus_settemp\") |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> yield(name: \"mean\")", "refId": "B"}],
+      "title": "Klima: Dome & Housing Temperatur, Taupunkte, Setpoint",
+      "type": "timeseries",
+      "description": "Abstand Dome-Temp zu Taupunkt = Kondensations-Puffer. Heizung hält Dome-Temp über Taupunkt."
+    },
+    {
+      "gridPos": {"h": 3, "w": 24, "x": 0, "y": 14},
+      "id": 202,
+      "options": {"content": "## 🔥 Heizung & Lüfter\n\n**Heater PWM** regelt die Heizleistung (PID). **Fan** unterstützt Durchmischung und Feuchtigkeitsabtransport. **Leistung** zeigt den Stromverbrauch der Heizung. Bei **heater_fault** oder **heater_safety** → Störung.", "mode": "markdown"},
+      "title": "Interpretation: Heizung",
+      "type": "text"
+    },
+    {
+      "datasource": {"type": "influxdb", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "drawStyle": "line", "fillOpacity": 15, "gradientMode": "none", "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5, "showPoints": "auto", "spanNulls": false, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "percent"}, "overrides": [{"matcher": {"id": "byRegexp", "options": ".*heater_duty.*"}, "properties": [{"id": "displayName", "value": "Heater PWM"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]}, {"matcher": {"id": "byRegexp", "options": ".*fan_duty.*"}, "properties": [{"id": "displayName", "value": "Fan PWM"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}}]}, {"matcher": {"id": "byRegexp", "options": ".*bme_temp_dome.*"}, "properties": [{"id": "displayName", "value": "Dome °C"}, {"id": "unit", "value": "celsius"}, {"id": "custom.axisPlacement", "value": "right"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}]}, {"matcher": {"id": "byRegexp", "options": ".*heaterplus_settemp.*"}, "properties": [{"id": "displayName", "value": "Setpoint °C"}, {"id": "unit", "value": "celsius"}, {"id": "custom.axisPlacement", "value": "right"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}}]}]},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 17},
+      "id": 111,
+      "options": {"legend": {"calcs": ["lastNotNull", "mean"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [{"datasource": {"type": "influxdb", "uid": "${datasource}"}, "query": "from(bucket: \"heater_plus\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"sensor_data\" and ((r.sensor == \"PWM\" and (r._field == \"heater_duty\" or r._field == \"fan_duty\")) or (r.sensor == \"BME280\" and (r._field == \"bme_temp_dome\" or r._field == \"heaterplus_settemp\")))) |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> yield(name: \"mean\")", "refId": "A"}],
+      "title": "Heater & Fan PWM + Temperatur",
+      "type": "timeseries",
+      "description": "Heater: Heizleistung. Fan: Lüfter. Beide arbeiten oft zusammen."
+    },
+    {
+      "datasource": {"type": "influxdb", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "drawStyle": "line", "fillOpacity": 15, "gradientMode": "none", "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5, "showPoints": "auto", "spanNulls": false, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "milliwatts"}, "overrides": [{"matcher": {"id": "byRegexp", "options": ".*ina_power.*"}, "properties": [{"id": "displayName", "value": "Leistung (mW)"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}}]}]},
+      "gridPos": {"h": 8, "w": 6, "x": 12, "y": 17},
+      "id": 112,
+      "options": {"legend": {"calcs": ["lastNotNull", "mean"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [{"datasource": {"type": "influxdb", "uid": "${datasource}"}, "query": "from(bucket: \"heater_plus\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"sensor_data\" and r.sensor == \"INA226\" and r._field == \"ina_power\") |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> yield(name: \"mean\")", "refId": "A"}],
+      "title": "Leistung (mW) INA226",
+      "type": "timeseries",
+      "description": "Leistungsaufnahme der Heizung. Steigt mit Heater-PWM."
+    },
+    {
+      "datasource": {"type": "influxdb", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "drawStyle": "line", "fillOpacity": 15, "gradientMode": "none", "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5, "showPoints": "auto", "spanNulls": false, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "milliamps"}, "overrides": [{"matcher": {"id": "byRegexp", "options": ".*ina_current.*"}, "properties": [{"id": "displayName", "value": "Strom (mA)"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}, {"id": "min", "value": 0}, {"id": "max", "value": 800}]}]},
+      "gridPos": {"h": 8, "w": 6, "x": 18, "y": 17},
+      "id": 116,
+      "options": {"legend": {"calcs": ["lastNotNull", "mean"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [{"datasource": {"type": "influxdb", "uid": "${datasource}"}, "query": "from(bucket: \"heater_plus\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"sensor_data\" and r.sensor == \"INA226\" and r._field == \"ina_current\") |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> yield(name: \"mean\")", "refId": "A"}],
+      "title": "Strom (mA) INA226",
+      "type": "timeseries",
+      "description": "Stromaufnahme der Heizung. Steigt mit Heater-PWM."
+    },
+    {
+      "gridPos": {"h": 3, "w": 24, "x": 0, "y": 25},
+      "id": 203,
+      "options": {"content": "## 💡 Helligkeit (TSL2591)\n\n**Lux** = wahrgenommene Helligkeit. **Visible** = sichtbarer Bereich, **IR** = Infrarot, **Full** = gesamt. Gain/Int steigen bei Dämmerung (Autogain). Bei Sättigung → Wert flacht ab.", "mode": "markdown"},
+      "title": "Interpretation: TSL2591",
+      "type": "text"
+    },
+    {
+      "datasource": {"type": "influxdb", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "short"}, "overrides": [{"matcher": {"id": "byRegexp", "options": ".*tsl_gain_index.*"}, "properties": [{"id": "displayName", "value": "Gain"}]}, {"matcher": {"id": "byRegexp", "options": ".*tsl_inttm.*"}, "properties": [{"id": "displayName", "value": "Int (ms)"}, {"id": "unit", "value": "milliseconds"}]}]},
+      "gridPos": {"h": 2, "w": 12, "x": 0, "y": 28},
+      "id": 121,
+      "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value"},
+      "targets": [{"datasource": {"type": "influxdb", "uid": "${datasource}"}, "query": "from(bucket: \"heater_plus\") |> range(start: -5m) |> filter(fn: (r) => r._measurement == \"sensor_data\" and r.sensor == \"tsl2591\" and (r._field == \"tsl_gain_index\" or r._field == \"tsl_inttm\")) |> last() |> yield(name: \"last\")", "refId": "A"}],
+      "title": "TSL2591 Gain & Int",
+      "type": "stat",
+      "description": "Aktueller Gain- und Integrationszeit-Index (über der Helligkeitsanzeige)."
+    },
+    {
+      "datasource": {"type": "influxdb", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5, "scaleDistribution": {"type": "linear"}, "showPoints": "auto", "spanNulls": false, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "lux"}, "overrides": [{"matcher": {"id": "byRegexp", "options": ".*tsl_lux.*"}, "properties": [{"id": "displayName", "value": "Lux"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "yellow"}}]}, {"matcher": {"id": "byRegexp", "options": ".*tsl_visible.*"}, "properties": [{"id": "displayName", "value": "Visible"}, {"id": "unit", "value": "short"}]}, {"matcher": {"id": "byRegexp", "options": ".*tsl_infrared.*"}, "properties": [{"id": "displayName", "value": "IR"}]}, {"matcher": {"id": "byRegexp", "options": ".*tsl_fullspectrum.*"}, "properties": [{"id": "displayName", "value": "Full"}]}]},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 30},
+      "id": 113,
+      "options": {"legend": {"calcs": ["lastNotNull", "mean"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [{"datasource": {"type": "influxdb", "uid": "${datasource}"}, "query": "from(bucket: \"heater_plus\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"sensor_data\" and r.sensor == \"tsl2591\" and (r._field == \"tsl_lux\" or r._field == \"tsl_visible\" or r._field == \"tsl_infrared\" or r._field == \"tsl_fullspectrum\")) |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> yield(name: \"mean\")", "refId": "A"}],
+      "title": "TSL2591 Helligkeit (Lux, Visible, IR, Full)",
+      "type": "timeseries",
+      "description": "Log-Skala für bessere Darstellung von Nacht bis Tag."
+    },
+    {
+      "gridPos": {"h": 3, "w": 24, "x": 0, "y": 36},
+      "id": 204,
+      "options": {"content": "## 📊 TCS3448 Spektrum\n\n**F1–F8** = schmale Wellenlängen (407–748 nm). **VIS** = sichtbar, **NIR** = nahes IR. **FZ/FY/FXL** = CIE-Farbkanäle. **FD/FD2/FD3** = Flicker-Erkennung (Netzfrequenz 50/60 Hz).\n\n⚠️ **Sprünge in den Kurven** = Autogain ändert Gain/Atime. Die Rohwerte skalieren dann anders. Siehe „Gain & Atime Verlauf“ – Sprünge dort = Sprünge im Spektrum. Linien ohne Fläche = klarer erkennbar.", "mode": "markdown"},
+      "title": "Interpretation: TCS3448",
+      "type": "text"
+    },
+    {
+      "datasource": {"type": "influxdb", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "short"}, "overrides": [{"matcher": {"id": "byRegexp", "options": ".*tcs_gain_index.*"}, "properties": [{"id": "displayName", "value": "Gain"}]}, {"matcher": {"id": "byRegexp", "options": ".*tcs_atime_steps.*"}, "properties": [{"id": "displayName", "value": "Atime"}]}]},
+      "gridPos": {"h": 2, "w": 12, "x": 0, "y": 39},
+      "id": 122,
+      "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value"},
+      "targets": [{"datasource": {"type": "influxdb", "uid": "${datasource}"}, "query": "from(bucket: \"heater_plus\") |> range(start: -5m) |> filter(fn: (r) => r._measurement == \"sensor_data\" and r.sensor == \"TCS3448\" and (r._field == \"tcs_gain_index\" or r._field == \"tcs_atime_steps\")) |> last() |> yield(name: \"last\")", "refId": "A"}],
+      "title": "TCS3448 Gain & Atime",
+      "type": "stat",
+      "description": "Aktueller Gain- und Atime-Index (über den Spektrum-Grafen)."
+    },
+    {
+      "datasource": {"type": "influxdb", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "drawStyle": "line", "fillOpacity": 0, "gradientMode": "none", "lineInterpolation": "stepAfter", "lineWidth": 2, "pointSize": 5, "showPoints": "never", "spanNulls": true, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "short"}, "overrides": [{"matcher": {"id": "byRegexp", "options": ".*tcs_gain_index.*"}, "properties": [{"id": "displayName", "value": "Gain"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "#2196F3"}}]}, {"matcher": {"id": "byRegexp", "options": ".*tcs_atime_steps.*"}, "properties": [{"id": "displayName", "value": "Atime"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "#FF9800"}}]}]},
+      "gridPos": {"h": 4, "w": 12, "x": 12, "y": 39},
+      "id": 123,
+      "options": {"legend": {"calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [{"datasource": {"type": "influxdb", "uid": "${datasource}"}, "query": "from(bucket: \"heater_plus\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"sensor_data\" and r.sensor == \"TCS3448\" and (r._field == \"tcs_gain_index\" or r._field == \"tcs_atime_steps\")) |> yield(name: \"raw\")", "refId": "A"}],
+      "title": "Gain & Atime Verlauf",
+      "type": "timeseries",
+      "description": "Wenn Gain/Atime sich ändert → Sprünge in F1–F8 sind normal (Autogain passt Skala an)."
+    },
+    {
+      "datasource": {"type": "influxdb", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "drawStyle": "line", "fillOpacity": 0, "gradientMode": "none", "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": true, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "short"}, "overrides": [{"matcher": {"id": "byRegexp", "options": ".*tcs_vis.*"}, "properties": [{"id": "displayName", "value": "VIS"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}]}, {"matcher": {"id": "byRegexp", "options": ".*tcs_vis2.*"}, "properties": [{"id": "displayName", "value": "VIS2"}]}, {"matcher": {"id": "byRegexp", "options": ".*tcs_vis3.*"}, "properties": [{"id": "displayName", "value": "VIS3"}]}, {"matcher": {"id": "byRegexp", "options": ".*tcs_nir.*"}, "properties": [{"id": "displayName", "value": "NIR"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]}]},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 43},
+      "id": 114,
+      "options": {"legend": {"calcs": ["lastNotNull", "mean"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [{"datasource": {"type": "influxdb", "uid": "${datasource}"}, "query": "from(bucket: \"heater_plus\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"sensor_data\" and r.sensor == \"TCS3448\" and (r._field == \"tcs_vis\" or r._field == \"tcs_vis2\" or r._field == \"tcs_vis3\" or r._field == \"tcs_nir\")) |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> yield(name: \"mean\")", "refId": "A"}],
+      "title": "TCS3448 VIS & NIR",
+      "type": "timeseries",
+      "description": "Breitband-Kanäle. NIR steigt bei künstlichem Licht stärker."
+    },
+    {
+      "datasource": {"type": "influxdb", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "drawStyle": "line", "fillOpacity": 0, "gradientMode": "none", "lineInterpolation": "linear", "lineWidth": 1.5, "pointSize": 5, "showPoints": "never", "spanNulls": true, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "short"}, "overrides": [{"matcher": {"id": "byRegexp", "options": ".*tcs_f1.*"}, "properties": [{"id": "displayName", "value": "F1 (407 nm)"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "purple"}}]}, {"matcher": {"id": "byRegexp", "options": ".*tcs_f2.*"}, "properties": [{"id": "displayName", "value": "F2 (424 nm)"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "#5C6BC0"}}]}, {"matcher": {"id": "byRegexp", "options": ".*tcs_f3.*"}, "properties": [{"id": "displayName", "value": "F3 (473 nm)"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "#2196F3"}}]}, {"matcher": {"id": "byRegexp", "options": ".*tcs_f4.*"}, "properties": [{"id": "displayName", "value": "F4 (516 nm)"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "#4CAF50"}}]}, {"matcher": {"id": "byRegexp", "options": ".*tcs_f5.*"}, "properties": [{"id": "displayName", "value": "F5 (546 nm)"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "#8BC34A"}}]}, {"matcher": {"id": "byRegexp", "options": ".*tcs_f6.*"}, "properties": [{"id": "displayName", "value": "F6 (636 nm)"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "#F44336"}}]}, {"matcher": {"id": "byRegexp", "options": ".*tcs_f7.*"}, "properties": [{"id": "displayName", "value": "F7 (687 nm)"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "#B71C1C"}}]}, {"matcher": {"id": "byRegexp", "options": ".*tcs_f8.*"}, "properties": [{"id": "displayName", "value": "F8 (748 nm)"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "#E91E63"}}]}]},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 43},
+      "id": 115,
+      "options": {"legend": {"calcs": ["lastNotNull", "mean"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [{"datasource": {"type": "influxdb", "uid": "${datasource}"}, "query": "from(bucket: \"heater_plus\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"sensor_data\" and r.sensor == \"TCS3448\" and (r._field == \"tcs_f1\" or r._field == \"tcs_f2\" or r._field == \"tcs_f3\" or r._field == \"tcs_f4\" or r._field == \"tcs_f5\" or r._field == \"tcs_f6\" or r._field == \"tcs_f7\" or r._field == \"tcs_f8\")) |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> yield(name: \"mean\")", "refId": "A"}],
+      "title": "TCS3448 F1–F8 Spektrum (Rohwerte)",
+      "type": "timeseries",
+      "description": "Rohwerte. Sprünge = Autogain (Gain/Atime). Linien ohne Fläche für klarere Darstellung."
+    },
+    {
+      "datasource": {"type": "influxdb", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "drawStyle": "line", "fillOpacity": 0, "gradientMode": "none", "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "showPoints": "never", "spanNulls": true, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "short"}, "overrides": [{"matcher": {"id": "byRegexp", "options": ".*tcs_fz.*"}, "properties": [{"id": "displayName", "value": "FZ"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "#9C27B0"}}]}, {"matcher": {"id": "byRegexp", "options": ".*tcs_fy.*"}, "properties": [{"id": "displayName", "value": "FY"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "#4CAF50"}}]}, {"matcher": {"id": "byRegexp", "options": ".*tcs_fxl.*"}, "properties": [{"id": "displayName", "value": "FXL"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "#2196F3"}}]}, {"matcher": {"id": "byRegexp", "options": ".*tcs_fd.*"}, "properties": [{"id": "displayName", "value": "FD (Flicker)"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "#FF9800"}}]}, {"matcher": {"id": "byRegexp", "options": ".*tcs_fd2.*"}, "properties": [{"id": "displayName", "value": "FD2"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "#795548"}}]}, {"matcher": {"id": "byRegexp", "options": ".*tcs_fd3.*"}, "properties": [{"id": "displayName", "value": "FD3"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "#607D8B"}}]}]},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 51},
+      "id": 116,
+      "options": {"legend": {"calcs": ["lastNotNull", "mean"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [{"datasource": {"type": "influxdb", "uid": "${datasource}"}, "query": "from(bucket: \"heater_plus\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"sensor_data\" and r.sensor == \"TCS3448\" and (r._field == \"tcs_fz\" or r._field == \"tcs_fy\" or r._field == \"tcs_fxl\" or r._field == \"tcs_fd\" or r._field == \"tcs_fd2\" or r._field == \"tcs_fd3\")) |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> yield(name: \"mean\")", "refId": "A"}],
+      "title": "TCS3448 FZ/FY/FXL & FD (Flicker)",
+      "type": "timeseries",
+      "description": "CIE-Farbkanäle und Flicker. FD steigt bei 50/60 Hz Beleuchtung (LED, Leuchtstoff)."
+    },
+    {
+      "gridPos": {"h": 3, "w": 24, "x": 0, "y": 59},
+      "id": 205,
+      "options": {"content": "## 🖥️ System & Blitz\n\n**Pi CPU** sollte <70°C bleiben. **Disk/Mem** zeigen Ressourcen. **AS3935** meldet Gewitter. Bei Blitz-Distanz/Energie: klein = nah.", "mode": "markdown"},
+      "title": "Interpretation: System",
+      "type": "text"
+    },
+    {
+      "datasource": {"type": "influxdb", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5, "showPoints": "auto", "spanNulls": false, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "short"}, "overrides": [{"matcher": {"id": "byRegexp", "options": ".*pi_cpu_temp.*"}, "properties": [{"id": "displayName", "value": "CPU °C"}, {"id": "unit", "value": "celsius"}, {"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]}, {"matcher": {"id": "byRegexp", "options": ".*pi_cpu_usage.*"}, "properties": [{"id": "displayName", "value": "CPU %"}, {"id": "unit", "value": "percent"}]}, {"matcher": {"id": "byRegexp", "options": ".*pi_disk_percent.*"}, "properties": [{"id": "displayName", "value": "Disk %"}, {"id": "unit", "value": "percent"}]}, {"matcher": {"id": "byRegexp", "options": ".*pi_mem_percent.*"}, "properties": [{"id": "displayName", "value": "Mem %"}, {"id": "unit", "value": "percent"}]}]},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 62},
+      "id": 117,
+      "options": {"legend": {"calcs": ["lastNotNull", "mean"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [{"datasource": {"type": "influxdb", "uid": "${datasource}"}, "query": "from(bucket: \"heater_plus\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"rpi_status\") |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> yield(name: \"mean\")", "refId": "A"}],
+      "title": "Raspberry Pi",
+      "type": "timeseries",
+      "description": "CPU-Temp, -Auslastung, Disk- und Speichernutzung."
+    },
+    {
+      "datasource": {"type": "influxdb", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5, "showPoints": "auto", "spanNulls": false, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "short"}, "overrides": [{"matcher": {"id": "byRegexp", "options": ".*as_lightning_count.*"}, "properties": [{"id": "displayName", "value": "Blitz-Count"}]}, {"matcher": {"id": "byRegexp", "options": ".*as_last_distance.*"}, "properties": [{"id": "displayName", "value": "Distanz (km)"}]}, {"matcher": {"id": "byRegexp", "options": ".*as_last_energy.*"}, "properties": [{"id": "displayName", "value": "Energie"}]}]},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 62},
+      "id": 118,
+      "options": {"legend": {"calcs": ["lastNotNull", "mean"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [{"datasource": {"type": "influxdb", "uid": "${datasource}"}, "query": "from(bucket: \"heater_plus\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"sensor_data\" and r.sensor == \"AS3935\") |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> yield(name: \"mean\")", "refId": "A"}],
+      "title": "Blitz (AS3935)",
+      "type": "timeseries",
+      "description": "Gewitter-Ereignisse, Distanz und Energie."
+    },
+    {
+      "datasource": {"type": "influxdb", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5, "showPoints": "auto", "spanNulls": false, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "volt"}, "overrides": []},
+      "gridPos": {"h": 6, "w": 12, "x": 0, "y": 70},
+      "id": 119,
+      "options": {"legend": {"calcs": ["lastNotNull", "mean"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [{"datasource": {"type": "influxdb", "uid": "${datasource}"}, "query": "from(bucket: \"heater_plus\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"sensor_data\" and r.sensor == \"INA226\" and r._field == \"ina_vbus\") |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> yield(name: \"mean\")", "refId": "A"}],
+      "title": "Spannung (Versorgung)",
+      "type": "timeseries",
+      "description": "Versorgungsspannung. Sollte stabil über 12V liegen."
+    },
+    {
+      "datasource": {"type": "influxdb", "uid": "${datasource}"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "axisColorMode": "text", "axisPlacement": "auto", "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5, "showPoints": "auto", "spanNulls": false, "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "percent"}, "overrides": [{"matcher": {"id": "byRegexp", "options": ".*bme_hum_dome.*"}, "properties": [{"id": "displayName", "value": "Feuchtigkeit Dome"}, {"id": "unit", "value": "percent"}]}, {"matcher": {"id": "byRegexp", "options": ".*bme_hum_housing.*"}, "properties": [{"id": "displayName", "value": "Feuchtigkeit Housing"}]}, {"matcher": {"id": "byRegexp", "options": ".*bme_pres_dome.*"}, "properties": [{"id": "displayName", "value": "Druck Dome"}, {"id": "unit", "value": "hpa"}]}, {"matcher": {"id": "byRegexp", "options": ".*bme_pres_housing.*"}, "properties": [{"id": "displayName", "value": "Druck Housing"}, {"id": "unit", "value": "hpa"}]}]},
+      "gridPos": {"h": 6, "w": 12, "x": 12, "y": 70},
+      "id": 120,
+      "options": {"legend": {"calcs": ["lastNotNull", "mean"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+      "targets": [{"datasource": {"type": "influxdb", "uid": "${datasource}"}, "query": "from(bucket: \"heater_plus\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"sensor_data\" and r.sensor == \"BME280\" and (r._field == \"bme_hum_dome\" or r._field == \"bme_hum_housing\" or r._field == \"bme_pres_dome\" or r._field == \"bme_pres_housing\")) |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> yield(name: \"mean\")", "refId": "A"}],
+      "title": "Feuchtigkeit & Druck",
+      "type": "timeseries",
+      "description": "Luftfeuchtigkeit und Luftdruck Dome/Housing."
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["heater_plus", "allsky"],
+  "templating": {"list": [{"current": {}, "hide": 0, "includeAll": false, "label": "Data source", "multi": false, "name": "datasource", "options": [], "query": "influxdb", "queryValue": "", "refresh": 1, "regex": "", "skipUrlSync": false, "type": "datasource"}]},
+  "time": {"from": "now-6h", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Heater+ Allsky Pro",
+  "uid": "heater-plus-allsky-pro",
+  "version": 1,
+  "weekStart": ""
+}

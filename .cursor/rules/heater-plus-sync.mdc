@@ -1,0 +1,23 @@
+---
+description: Heater+ – Laufzeit ~/heater_plus vs. Paket allsky_heaterpcb_install (GitHub)
+globs: "**/heater_plus.py,**/tcs3448.py,**/allsky_heaterplussettings.py"
+---
+
+# Workflow des Nutzers
+
+- **Entwicklung/Test:** Dateien unter **`~/heater_plus/`** bearbeiten und ausführen (`heater_plus.py`, `tcs3448.py`, `allsky_heaterplussettings.py`).
+- **GitHub:** Dieselben Dateien liegen im Repo unter **`allsky_heaterpcb_install/`**.
+
+**Vor `git commit` / `git push`:** aus `allsky_heaterpcb_install/` ausführen:
+
+```bash
+./sync_dev_to_package.sh
+```
+
+Damit wird **von der Laufzeit ins Paket** kopiert – das Repo enthält dann die getestete Version.
+
+**Nach `git pull`** (Paket neuer als Laufzeit): `./sync_heater_plus_runtime.sh`
+
+**Nicht** ohne Absprache committen: `hp_settings.json` (Token).
+
+Wenn Änderungen nur im Paket gemacht wurden (ohne Symlink-Setup): `./sync_heater_plus_runtime.sh` zuerst, testen, oder direkt im Paket arbeiten und dann `sync_dev_to_package.sh` ist nicht nötig für diese Datei – aber bei Workflow „nur ~/heater_plus“ immer vor Push `sync_dev_to_package.sh`.

@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from collections import deque
 from pathlib import Path
+from typing import Optional
 
 import board
 import busio
@@ -25,6 +26,25 @@ from influxdb_client.client.write_api import SYNCHRONOUS
 
 from tcs3448 import TCS3448
 from ina226 import INA226  # INA226 class: must accept busnum, address, shunt_ohms
+
+# Persistente Fehler-Logdatei (Support): unabhängig von debugoutput / log_file
+DEFAULT_ERROR_LOG_PATH = "/home/pi/heater_plus/heater_plus_errors.log"
+
+
+def _write_error_log_file(path: str, message: str, traceback_text: str = "") -> None:
+    """Schreibt einen Fehlereintrag in die Datei (append). Fehler beim Schreiben werden ignoriert."""
+    try:
+        ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+        parent = Path(path).parent
+        parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "a", encoding="utf-8") as ef:
+            ef.write(f"[{ts}] {message}\n")
+            if traceback_text:
+                ef.write(traceback_text.rstrip() + "\n")
+            ef.write("---\n")
+            ef.flush()
+    except Exception:
+        pass
 
 
 def _parse_meminfo(text, key):
@@ -112,6 +132,8 @@ class LogicConfig:
     heater_fault_cycles: int   # Zyklen mit zu wenig Strom → Heizer-Fehler
     # Logdatei (leer = nur Konsole)
     log_file: str
+    # Fehler-Log für Support (immer bei schwerwiegenden Fehlern beschrieben)
+    error_log_path: str
     # Sensor-Ausfall: Heizung aus wenn BME Dome keine gültige Temperatur für X Sekunden liefert (0=deaktiviert)
     sensor_fault_timeout_sec: float
     # Graceful Shutdown: Heizung über X Sekunden rampen statt sofort ausschalten (0=sofort)
@@ -210,6 +232,22 @@ class HeaterPlusController:
     def debug(self):
         return self.logic_cfg.debug if self.logic_cfg else True
 
+    def error_log_path_resolved(self) -> str:
+        if self.logic_cfg and getattr(self.logic_cfg, "error_log_path", "").strip():
+            return self.logic_cfg.error_log_path.strip()
+        return DEFAULT_ERROR_LOG_PATH
+
+    def log_error(self, message: str, exc: Optional[BaseException] = None) -> None:
+        """Schreibt in heater_plus_errors.log (und stderr). Unabhängig von debugoutput."""
+        path = self.error_log_path_resolved()
+        tb = ""
+        if exc is not None:
+            tb = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+        _write_error_log_file(path, message, tb)
+        print(f"[ERROR] {message}", file=sys.stderr)
+        if tb and self.debug:
+            print(tb, file=sys.stderr)
+
     def log(self, *args):
         msg = " ".join(str(a) for a in args)
         if self.debug:
@@ -227,6 +265,11 @@ class HeaterPlusController:
     # -----------------------------------------------------------------------
     def load_settings(self):
         if not os.path.exists(self.settings_path):
+            _write_error_log_file(
+                DEFAULT_ERROR_LOG_PATH,
+                f"hp_settings.json nicht gefunden: {self.settings_path}",
+                "",
+            )
             print("[Settings] Settings file not found:", self.settings_path)
             sys.exit(1)
 
@@ -263,6 +306,7 @@ class HeaterPlusController:
             heater_min_current_above_idle=float(s.get("heater_min_current_above_idle", 10.0)),
             heater_fault_cycles=int(s.get("heater_fault_cycles", 5)),
             log_file=(s.get("log_file") or s.get("logfile_path") or "").strip() or "",
+            error_log_path=(s.get("error_log_path") or "").strip() or DEFAULT_ERROR_LOG_PATH,
             sensor_fault_timeout_sec=float(s.get("sensor_fault_timeout_sec", 10.0)),
             shutdown_heater_ramp_sec=float(s.get("shutdown_heater_ramp_sec", 1.5)),
             pid_proximity_band=float(s.get("pid_proximity_band", 0.5)),
@@ -356,10 +400,12 @@ class HeaterPlusController:
         if getattr(c, "shutdown_heater_ramp_sec", 1.5) < 0:
             err.append("shutdown_heater_ramp_sec muss >= 0 (0=sofort ausschalten)")
         if err:
+            detail = "\n".join(f"  - {e}" for e in err)
             print("[Settings] Validierung fehlgeschlagen:")
             for e in err:
                 print("  -", e)
             print("Bitte hp_settings.json anpassen.")
+            self.log_error("[Settings] Validierung fehlgeschlagen:\n" + detail, None)
             if exit_on_error:
                 sys.exit(1)
             return False
@@ -400,6 +446,7 @@ class HeaterPlusController:
             heater_min_current_above_idle=float(s.get("heater_min_current_above_idle", 10.0)),
             heater_fault_cycles=int(s.get("heater_fault_cycles", 5)),
             log_file=(s.get("log_file") or s.get("logfile_path") or "").strip() or "",
+            error_log_path=(s.get("error_log_path") or "").strip() or DEFAULT_ERROR_LOG_PATH,
             sensor_fault_timeout_sec=float(s.get("sensor_fault_timeout_sec", 10.0)),
             shutdown_heater_ramp_sec=float(s.get("shutdown_heater_ramp_sec", 1.5)),
             pid_proximity_band=float(s.get("pid_proximity_band", 0.5)),
@@ -436,7 +483,7 @@ class HeaterPlusController:
             with open(self.settings_path) as f:
                 s = json.load(f)
         except (json.JSONDecodeError, IOError) as e:
-            self.log("[Settings] Neuladen fehlgeschlagen:", e)
+            self.log_error("[Settings] Neuladen fehlgeschlagen", e)
             return
         self._settings_mtime = mtime
         if not self.validate_settings(exit_on_error=False):
@@ -459,7 +506,7 @@ class HeaterPlusController:
                 self.bme280_dome.sea_level_pressure = self.logic_cfg.sea_level_pressure
                 self.log("[Init] BME280 Dome OK.")
             except Exception as e:
-                self.log("[Init] BME280 Dome error:", e, "\n", traceback.format_exc())
+                self.log_error("[Init] BME280 Dome error", e)
 
         # BME280 Housing
         if self.sensor_cfg.bme_housing_addr:
@@ -470,7 +517,7 @@ class HeaterPlusController:
                 self.bme280_housing.sea_level_pressure = self.logic_cfg.sea_level_pressure
                 self.log("[Init] BME280 Housing OK.")
             except Exception as e:
-                self.log("[Init] BME280 Housing error:", e, "\n", traceback.format_exc())
+                self.log_error("[Init] BME280 Housing error", e)
 
         # TSL2591
         if self.sensor_cfg.tsl_addr:
@@ -480,7 +527,7 @@ class HeaterPlusController:
                 self.tsl2591.integration_time = self.integration_times[self.tslintmindex]
                 self.log(f"[Init] TSL2591 OK (gain={self.tslgainindex}, integration={self.integration_time_ms[self.tslintmindex]} ms).")
             except Exception as e:
-                self.log("[Init] TSL2591 error:", e, "\n", traceback.format_exc())
+                self.log_error("[Init] TSL2591 error", e)
 
         # AS3935
         if self.sensor_cfg.as3935_addr:
@@ -497,7 +544,7 @@ class HeaterPlusController:
                 self.data["as_last_energy"] = 0
                 self.log("[Init] AS3935 OK (Interrupt + Polling).")
             except Exception as e:
-                self.log("[Init] AS3935 error:", e, "\n", traceback.format_exc())
+                self.log_error("[Init] AS3935 error", e)
 
         # INA226 (Adresse 0 = deaktiviert, Sensor nicht angeschlossen)
         if self.sensor_cfg.ina_addr:
@@ -510,7 +557,7 @@ class HeaterPlusController:
                 self.ina.configure()
                 self.log("[Init] INA226 OK.")
             except Exception as e:
-                self.log("[Init] INA226 error:", e, "\n", traceback.format_exc())
+                self.log_error("[Init] INA226 error", e)
                 self.ina = None
         else:
             self.log("[Init] INA226 deaktiviert (ina226_address=0).")
@@ -530,7 +577,7 @@ class HeaterPlusController:
                 self.tcs_astep = self.sensor_cfg.tcs_astep
                 self.log(f"[Init] TCS3448 OK (atime={self.tcs_atime_steps}, astep={self.tcs_astep}, gain={self.tcs_gain_index}).")
             except Exception as e:
-                self.log("[Init] TCS3448 error:", e, "\n", traceback.format_exc())
+                self.log_error("[Init] TCS3448 error", e)
                 self.tcs = None
         else:
             self.log("[Init] TCS3448 deaktiviert (tcs3448_address=0).")
@@ -596,6 +643,15 @@ class HeaterPlusController:
     def influxdb_connect(self):
         if not self.logic_cfg.send_to_db:
             return
+        tok = (self.db_cfg.token or "").strip()
+        if not tok or tok == "REPLACE_WITH_INFLUX_TOKEN":
+            self.db_connected = False
+            self.log_error(
+                "[InfluxDB] token_db fehlt oder ist Platzhalter REPLACE_WITH_INFLUX_TOKEN – "
+                "echtes Token in hp_settings.json setzen (http://localhost:8086)",
+                None,
+            )
+            return
         try:
             self.client = InfluxDBClient(
                 url=self.db_cfg.url,
@@ -607,7 +663,7 @@ class HeaterPlusController:
             self.log("[Init] InfluxDB2 OK.")
         except Exception as e:
             self.db_connected = False
-            self.log("[Init] InfluxDB2 error:", e, "\n", traceback.format_exc())
+            self.log_error("[Init] InfluxDB2 error", e)
 
     def influxdb_reconnect(self):
         if not self.db_connected and self.logic_cfg.send_to_db:
@@ -737,7 +793,7 @@ class HeaterPlusController:
                             p = p.field(k, v)
                         self.write_api.write(self.db_cfg.bucket, self.db_cfg.org, p)
                     except Exception as e:
-                        self.log("[InfluxDB] TCS3448 write error:", e)
+                        self.log_error("[InfluxDB] TCS3448 write error", e)
 
             # Raspberry Pi status (measurement "rpi_status" for Grafana)
             pi_fields = {}
@@ -769,7 +825,7 @@ class HeaterPlusController:
                 self.write_api.write(self.db_cfg.bucket, self.db_cfg.org, p)
 
         except Exception as e:
-            self.log("[InfluxDB] Write error:", e, "\n", traceback.format_exc())
+            self.log_error("[InfluxDB] Write error", e)
             self.db_connected = False
 
     def influxdb_close(self):
@@ -779,7 +835,7 @@ class HeaterPlusController:
                 self.db_connected = False
                 self.log("[InfluxDB] Connection closed.")
         except Exception as e:
-            self.log("[InfluxDB] Close error:", e, "\n", traceback.format_exc())
+            self.log_error("[InfluxDB] Close error", e)
 
     # -----------------------------------------------------------------------
     # JSON output for Allsky Overlay (config/overlay/extra/)
@@ -898,7 +954,7 @@ class HeaterPlusController:
                 json.dump(out, f, indent=2)
             self.log("[JSON] Written", self.logic_cfg.filename_json)
         except Exception as e:
-            self.log("[JSON] Error:", e, "\n", traceback.format_exc())
+            self.log_error("[JSON] Overlay-Datei konnte nicht geschrieben werden", e)
 
     # -----------------------------------------------------------------------
     # Sensor-Reads
@@ -1496,28 +1552,37 @@ class HeaterPlusController:
     def loop(self):
         last_db = 0
         while self.running and self.logic_cfg.run:
-            self.check_and_reload_settings()
-            t0 = time.time()
+            try:
+                self.check_and_reload_settings()
+                t0 = time.time()
 
-            self.read_all_sensors()
+                self.read_all_sensors()
 
-            if self.logic_cfg.sensor_only:
-                # Sensors only: output then wait
-                self.print_sensor_data()
-            else:
-                self.update_setpoint()
-                self.apply_pid()
-                self.update_fan()
-                self.print_sensor_data()
+                if self.logic_cfg.sensor_only:
+                    # Nur Sensoren: JSON/DB trotzdem periodisch (Overlay + optional DB)
+                    self.print_sensor_data()
+                    if time.time() - last_db >= self.logic_cfg.upd_interval_db:
+                        if self.logic_cfg.send_to_db and self.db_connected:
+                            self.influxdb_write()
+                        self.json_write()
+                        last_db = time.time()
+                else:
+                    self.update_setpoint()
+                    self.apply_pid()
+                    self.update_fan()
+                    self.print_sensor_data()
 
-                if time.time() - last_db >= self.logic_cfg.upd_interval_db:
-                    self.influxdb_write()
-                    self.json_write()
-                    last_db = time.time()
+                    if time.time() - last_db >= self.logic_cfg.upd_interval_db:
+                        self.influxdb_write()
+                        self.json_write()
+                        last_db = time.time()
 
-            dt = time.time() - t0
-            sleep_time = max(0.0, self.logic_cfg.upd_interval_sensor - dt)
-            time.sleep(sleep_time)
+                dt = time.time() - t0
+                sleep_time = max(0.0, self.logic_cfg.upd_interval_sensor - dt)
+                time.sleep(sleep_time)
+            except Exception as e:
+                self.log_error("[Loop] Unerwarteter Fehler (Zyklus wird fortgesetzt)", e)
+                time.sleep(max(1.0, float(self.logic_cfg.upd_interval_sensor)))
 
     # -----------------------------------------------------------------------
     # Exit (Graceful Shutdown)

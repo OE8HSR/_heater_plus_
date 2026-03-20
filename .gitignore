@@ -1,3 +1,22 @@
+# ---------------------------------------------------------------------------
+# Nur Install-Paket + README ins öffentliche Repo committen.
+# Lokale Laufzeit, Geheimnisse und Hilfs-/Analyse-Tools bleiben unten ignoriert.
+# ---------------------------------------------------------------------------
+
+# --- Lokale Laufzeit im Repo-Root (Kopien zum Testen; Quelle = allsky_heaterpcb_install/) ---
+/heater_plus.py
+/tcs3448.py
+/hp_settings.json
+/heater_plus_errors.log
+
+# Hinweis: allsky_heaterpcb_install/hp_settings.json ist im Repo (Platzhalter-Token REPLACE_WITH_INFLUX_TOKEN).
+# Niemals echtes Token dort committen – nur ~/heater_plus/hp_settings.json mit echtem Token (Root unten ignoriert).
+
+# --- Hilfs- und Analyse-Skripte (nicht für Endnutzer-Installation) ---
+/compare_measured_vs_weather.py
+/SPEKTRUM_ANALYSE.md
+/tools/
+
 # Python
 __pycache__/
 *.py[cod]

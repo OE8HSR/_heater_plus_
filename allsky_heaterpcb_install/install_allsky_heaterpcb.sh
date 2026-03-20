@@ -16,9 +16,9 @@
 #   3. Python-Pakete (ohne venv, system-weit)
 #   4. InfluxDB 2 installieren, Bucket + Token anlegen
 #   5. Grafana installieren, Datasource + Dashboard
-#   6. Heater+ Dateien, hp_settings.json mit Token
+#   6. Heater+ Dateien, hp_settings.json (Pfade + optional Token)
 #   7. Allsky-Modul + Overlay integrieren
-#   8. Systemd-Service für heater_plus
+#   8. Systemd-Service für heater_plus (optional)
 #
 set -e
 
@@ -356,29 +356,51 @@ install_grafana() {
 # --- 7. Heater+ Dateien ---
 install_heater_plus_files() {
     progress_step 7 "Heater+ Dateien installieren"
+    # shellcheck source=/dev/null
+    source "$SCRIPT_DIR/heater_plus_runtime_sync.inc.sh"
+
     mkdir -p "$INSTALL_DIR"
-    for f in heater_plus.py allsky_heaterplussettings.py tcs3448.py hp_settings.json grafana_dashboard_heater_plus_pro.json import_grafana_dashboard.sh; do
+    # Python: Symlink wenn Paket unter $INSTALL_DIR liegt, sonst Kopie (siehe heater_plus_runtime_sync.inc.sh)
+    heater_plus_sync_runtime_scripts heater_plus.py tcs3448.py allsky_heaterplussettings.py
+
+    # hp_settings.json: liegt im Git-Paket mit Platzhalter-Token; Install kopiert bei Erst-Installation
+    local hp_settings="$INSTALL_DIR/hp_settings.json"
+    if [[ ! -f "$hp_settings" ]]; then
+        if [[ -f "$SCRIPT_DIR/hp_settings.json" ]]; then
+            cp -f "$SCRIPT_DIR/hp_settings.json" "$INSTALL_DIR/hp_settings.json"
+            log "[OK] hp_settings.json aus Paket nach $INSTALL_DIR (token_db ggf. REPLACE_WITH_INFLUX_TOKEN → echtes Token setzen)"
+        else
+            warn "hp_settings.json fehlt im Paket – bitte Repo prüfen"
+        fi
+    else
+        log "[OK] hp_settings.json existiert bereits – nicht überschrieben"
+    fi
+
+    for f in grafana_dashboard_heater_plus_pro.json import_grafana_dashboard.sh; do
         if [[ -f "$SCRIPT_DIR/$f" ]]; then
-            cp "$SCRIPT_DIR/$f" "$INSTALL_DIR/"
+            cp -f "$SCRIPT_DIR/$f" "$INSTALL_DIR/"
             log "[OK] $f kopiert"
         else
             warn "$f nicht gefunden in $SCRIPT_DIR"
         fi
     done
 
-    # hp_settings.json: Token und Pfade setzen
-    local hp_settings="$INSTALL_DIR/hp_settings.json"
-    if [[ -f "$hp_settings" ]] && [[ -n "$INFLUX_TOKEN" ]]; then
-        if command -v jq >/dev/null 2>&1; then
+    # hp_settings.json: Pfade IMMER setzen (auch ohne Influx-Token – sonst falsche Overlay-Pfade)
+    local extra_json="${ALLSKY_CONFIG:-/home/pi/allsky/config}/overlay/extra/heater_plus.json"
+    if [[ -f "$hp_settings" ]] && command -v jq >/dev/null 2>&1; then
+        jq --arg p "$extra_json" '.filename_json = $p' "$hp_settings" > "${hp_settings}.tmp"
+        mv "${hp_settings}.tmp" "$hp_settings"
+        if [[ -n "$INFLUX_TOKEN" ]]; then
             jq --arg t "$INFLUX_TOKEN" '.token_db = $t' "$hp_settings" > "${hp_settings}.tmp"
             mv "${hp_settings}.tmp" "$hp_settings"
         fi
-        # filename_json auf Allsky extra zeigen
-        local extra_json="${ALLSKY_CONFIG:-/home/pi/allsky/config}/overlay/extra/heater_plus.json"
-        if command -v jq >/dev/null 2>&1; then
-            jq --arg p "$extra_json" '.filename_json = $p' "$hp_settings" > "${hp_settings}.tmp"
-            mv "${hp_settings}.tmp" "$hp_settings"
-        fi
+    elif [[ -f "$hp_settings" ]] && [[ -n "$INFLUX_TOKEN" ]] && command -v jq >/dev/null 2>&1; then
+        jq --arg t "$INFLUX_TOKEN" '.token_db = $t' "$hp_settings" > "${hp_settings}.tmp"
+        mv "${hp_settings}.tmp" "$hp_settings"
+    fi
+
+    if [[ -f "$hp_settings" ]] && grep -q 'REPLACE_WITH_INFLUX_TOKEN' "$hp_settings" 2>/dev/null; then
+        warn "token_db noch Platzhalter – InfluxDB-Token in http://localhost:8086 anlegen und in $hp_settings eintragen (oder Install erneut mit erfolgreichem Influx-Setup)"
     fi
 
     chown -R pi:pi "$INSTALL_DIR" 2>/dev/null || true
@@ -399,6 +421,8 @@ install_allsky_integration() {
     local OVERLAY_TEMPLATES="${ALLSKY_CONFIG}/overlay/myTemplates"
 
     mkdir -p "$MODULES_DIR" "$OVERLAY_EXTRA" "$OVERLAY_TEMPLATES"
+    chmod 775 "$OVERLAY_EXTRA" 2>/dev/null || true
+    chown pi:pi "$OVERLAY_EXTRA" 2>/dev/null || true
 
     # Modul
     if [[ -f "$SCRIPT_DIR/allsky_heaterplussettings.py" ]]; then
@@ -407,7 +431,7 @@ install_allsky_integration() {
         log "[OK] Allsky-Modul kopiert"
     fi
 
-    # Fallback extra/heater_plus.json
+    # Fallback extra/heater_plus.json (Allsky lädt ALLE *.json aus overlay/extra/)
     if [[ -f "$SCRIPT_DIR/heater_plus.json" ]]; then
         cp "$SCRIPT_DIR/heater_plus.json" "$OVERLAY_EXTRA/heater_plus.json"
     elif [[ -f "$OVERLAY_EXTRA/heater_plus.json" ]]; then
@@ -415,6 +439,8 @@ install_allsky_integration() {
     else
         echo '{"HP_TEMP_DOME":{"value":"--","expires":60}}' > "$OVERLAY_EXTRA/heater_plus.json"
     fi
+    chmod 664 "$OVERLAY_EXTRA/heater_plus.json" 2>/dev/null || true
+    chown pi:pi "$OVERLAY_EXTRA/heater_plus.json" 2>/dev/null || true
 
     # Overlay-Templates und userfields installieren
     local OVERLAY_CONFIG_SRC="${SCRIPT_DIR}/overlay_config"
@@ -540,6 +566,10 @@ print_summary() {
     [[ "${I2C_WAS_ACTIVATED:-0}" -eq 1 ]] && log "  1. sudo reboot  (zwingend für I2C)"
     log "  2. Im Allsky-GUI: Module Manager -> Periodic Jobs -> Heater+ Settings aktivieren"
     log "  3. Heater+ Control-Script über die Checkbox 'Heater+ Control-Script aktiv' starten"
+    log "  4. Allsky: WebUI -> Overlay – Tag- und Nacht-Overlay auf Heater+-Vorlage stellen"
+    log "     (z. B. overlay1-RPi_HQ-4056x3040-both.json unter myTemplates), sonst keine HP-Felder"
+    log "  5. Entwicklung in ~/heater_plus: vor git push ./sync_dev_to_package.sh (Paket = GitHub)"
+    log "  6. Echte Kopien statt Symlinks: HEATER_PLUS_USE_SYMLINKS=0 sudo $0"
     log ""
 }
 

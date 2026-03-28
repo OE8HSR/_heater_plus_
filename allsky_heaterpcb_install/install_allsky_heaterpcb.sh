@@ -14,11 +14,18 @@
 #   1. Allsky prüfen
 #   2. System-Pakete, I2C aktivieren
 #   3. Python-Pakete (ohne venv, system-weit)
-#   4. InfluxDB 2 installieren, Bucket + Token anlegen
-#   5. Grafana installieren, Datasource + Dashboard
+#   4. InfluxDB 2 (optional, siehe unten)
+#   5. Grafana (optional)
 #   6. Heater+ Dateien, hp_settings.json (Pfade + optional Token)
 #   7. Allsky-Modul + Overlay integrieren
 #   8. Systemd-Service für heater_plus (optional)
+#
+# Optionale Komponenten (Standard: beide ja, wie bisher):
+#   Interaktiv (TTY): Rückfrage vor InfluxDB / Grafana.
+#   Ohne TTY oder HEATER_PLUS_NONINTERACTIVE=1: keine Rückfrage, Standard = beide installieren.
+#   Umgebung: HEATER_PLUS_INSTALL_INFLUX=0|1  HEATER_PLUS_INSTALL_GRAFANA=0|1
+#   CLI: --no-influx  --no-grafana  --minimal (= beides aus)
+#   Hilfe: --help
 #
 set -e
 
@@ -73,6 +80,96 @@ pip_needs_break_system() {
 
 influx_bucket_exists() {
     influx bucket list --org "$INFLUX_ORG" 2>/dev/null | grep -q "$INFLUX_BUCKET"
+}
+
+# --- Optionale Influx/Grafana (Standard unverändert: beides an) ---
+# INSTALL_INFLUX / INSTALL_GRAFANA: 1 = installieren, 0 = überspringen
+INSTALL_INFLUX=1
+INSTALL_GRAFANA=1
+_CLI_NO_INFLUX=0
+_CLI_NO_GRAFANA=0
+_CLI_MINIMAL=0
+
+usage() {
+    cat << 'USAGEEOF'
+Allsky + Heater-PCB Installation
+
+  sudo ./install_allsky_heaterpcb.sh [Optionen]
+
+Optionen:
+  --no-influx      InfluxDB nicht installieren
+  --no-grafana     Grafana nicht installieren
+  --minimal        Weder InfluxDB noch Grafana (nur Heater+/Allsky-Teil)
+
+Umgebung (nicht interaktiv, z. B. Skripte):
+  HEATER_PLUS_NONINTERACTIVE=1   keine Rückfragen; Standard = alles installieren
+  HEATER_PLUS_INSTALL_INFLUX=0|1
+  HEATER_PLUS_INSTALL_GRAFANA=0|1
+
+Ohne Optionen: wie bisher vollständige Installation; bei interaktivem Terminal kurze Rückfragen.
+USAGEEOF
+}
+
+parse_cli_optional() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --no-influx)    _CLI_NO_INFLUX=1 ;;
+            --no-grafana)   _CLI_NO_GRAFANA=1 ;;
+            --minimal)      _CLI_MINIMAL=1 ;;
+            -h|--help)      usage; exit 0 ;;
+            *)
+                warn "Unbekannte Option: $1 (weiter mit --help)"
+                ;;
+        esac
+        shift
+    done
+    if [[ "$_CLI_MINIMAL" -eq 1 ]]; then
+        _CLI_NO_INFLUX=1
+        _CLI_NO_GRAFANA=1
+    fi
+}
+
+# Reihenfolge: CLI > Umgebungsvariable > interaktive Rückfrage (nur TTY) > Standard 1 (unverändert wie bisher)
+resolve_optional_installs() {
+    if [[ "$_CLI_NO_INFLUX" -eq 1 ]]; then
+        INSTALL_INFLUX=0
+    elif [[ "${HEATER_PLUS_INSTALL_INFLUX:-}" != "" ]]; then
+        case "${HEATER_PLUS_INSTALL_INFLUX}" in
+            0|false|no|n|N) INSTALL_INFLUX=0 ;;
+            *)              INSTALL_INFLUX=1 ;;
+        esac
+    elif [[ -t 0 ]] && [[ -z "${HEATER_PLUS_NONINTERACTIVE:-}" ]]; then
+        echo ""
+        read -r -p "InfluxDB 2 installieren und einrichten? [Y/n]: " _ans_influx || true
+        case "${_ans_influx:-y}" in
+            [nN]|[nN][oO]|0) INSTALL_INFLUX=0 ;;
+            *)               INSTALL_INFLUX=1 ;;
+        esac
+    else
+        INSTALL_INFLUX=1
+    fi
+
+    if [[ "$_CLI_NO_GRAFANA" -eq 1 ]]; then
+        INSTALL_GRAFANA=0
+    elif [[ "${HEATER_PLUS_INSTALL_GRAFANA:-}" != "" ]]; then
+        case "${HEATER_PLUS_INSTALL_GRAFANA}" in
+            0|false|no|n|N) INSTALL_GRAFANA=0 ;;
+            *)              INSTALL_GRAFANA=1 ;;
+        esac
+    elif [[ -t 0 ]] && [[ -z "${HEATER_PLUS_NONINTERACTIVE:-}" ]]; then
+        read -r -p "Grafana installieren (Dashboard Heater+)? [Y/n]: " _ans_grafana || true
+        case "${_ans_grafana:-y}" in
+            [nN]|[nN][oO]|0) INSTALL_GRAFANA=0 ;;
+            *)               INSTALL_GRAFANA=1 ;;
+        esac
+    else
+        INSTALL_GRAFANA=1
+    fi
+
+    export INSTALL_INFLUX INSTALL_GRAFANA
+    INFLUX_TOKEN=""
+    export INFLUX_TOKEN
+    log "Komponenten: InfluxDB=$INSTALL_INFLUX  Grafana=$INSTALL_GRAFANA"
 }
 
 # --- 1. Voraussetzungen ---
@@ -528,7 +625,7 @@ install_systemd_service() {
         cat > "$svc" << 'SVCEOF'
 [Unit]
 Description=Heater+ PCB Control
-After=network.target influxdb.service
+After=network.target
 
 [Service]
 Type=simple
@@ -558,9 +655,11 @@ print_summary() {
         log "    Befehl:  sudo reboot"
         log ""
     fi
-    log "Grafana:        http://$(hostname -I | awk '{print $1}'):3000  (admin/admin - Passwort ändern!)"
+    [[ "${INSTALL_GRAFANA:-1}" -eq 1 ]] && log "Grafana:        http://$(hostname -I | awk '{print $1}'):3000  (admin/admin – Passwort ändern!)"
     log "Allsky WebUI:   http://$(hostname -I | awk '{print $1}')/allsky"
-    log "InfluxDB:       http://localhost:8086"
+    [[ "${INSTALL_INFLUX:-1}" -eq 1 ]] && log "InfluxDB:       http://localhost:8086"
+    [[ "${INSTALL_INFLUX:-1}" -eq 0 ]] && log "InfluxDB:       nicht installiert (token_db in ~/heater_plus/hp_settings.json ggf. anpassen oder später installieren)"
+    [[ "${INSTALL_GRAFANA:-1}" -eq 0 ]] && log "Grafana:        nicht installiert (optional nachinstallieren oder ./import_grafana_dashboard.sh später)"
     log ""
     log "Nächste Schritte:"
     [[ "${I2C_WAS_ACTIVATED:-0}" -eq 1 ]] && log "  1. sudo reboot  (zwingend für I2C)"
@@ -575,13 +674,30 @@ print_summary() {
 
 # --- Hauptablauf ---
 main() {
+    parse_cli_optional "$@"
     log "=== Allsky + Heater-PCB Installation ==="
     check_prereqs
+    resolve_optional_installs
     install_system_packages
     enable_i2c
     install_python_packages
-    install_influxdb
-    install_grafana
+
+    if [[ "${INSTALL_INFLUX:-1}" -eq 1 ]]; then
+        install_influxdb
+    else
+        progress_step 5 "InfluxDB (übersprungen)"
+        log "InfluxDB wird nicht installiert. Sensoren/Overlay funktionieren; DB-Schreiben erst nach eigenem Influx oder erneutem Install."
+        INFLUX_TOKEN=""
+        export INFLUX_TOKEN
+    fi
+
+    if [[ "${INSTALL_GRAFANA:-1}" -eq 1 ]]; then
+        install_grafana
+    else
+        progress_step 6 "Grafana (übersprungen)"
+        log "Grafana wird nicht installiert. Dashboard-JSON liegt unter $INSTALL_DIR und kann bei Bedarf manuell importiert werden."
+    fi
+
     install_heater_plus_files
     install_allsky_integration
     install_systemd_service

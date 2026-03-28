@@ -84,6 +84,26 @@ chmod +x install_allsky_heaterpcb.sh
 sudo ./install_allsky_heaterpcb.sh
 ```
 
+**Standard (wie bisher):** InfluxDB und Grafana werden mitinstalliert – **ohne** zusätzliche Angaben.
+
+**Optional:** Am Terminal wirst du (nach der Allsky-Prüfung) gefragt, ob **InfluxDB** und **Grafana** installiert werden sollen. Ohne Terminal (z. B. Pipe) oder mit `HEATER_PLUS_NONINTERACTIVE=1` bleibt das Verhalten wie bisher (beides **ja**).
+
+Nur Heater+/Allsky ohne DB/Grafana (z. B. minimaler Pi):
+
+```bash
+sudo ./install_allsky_heaterpcb.sh --minimal
+# oder einzeln:
+sudo ./install_allsky_heaterpcb.sh --no-influx --no-grafana
+```
+
+Nicht interaktiv, aber ohne Influx:
+
+```bash
+HEATER_PLUS_NONINTERACTIVE=1 HEATER_PLUS_INSTALL_INFLUX=0 sudo -E ./install_allsky_heaterpcb.sh
+```
+
+Hilfe: `sudo ./install_allsky_heaterpcb.sh --help`
+
 Das Script führt automatisch aus:
 
 | Schritt | Aktion |
@@ -91,8 +111,8 @@ Das Script führt automatisch aus:
 | 1 | Allsky prüfen |
 | 2 | System-Pakete installieren, I2C aktivieren |
 | 3 | Python-Pakete (BME280, TSL2591, TCS3448, INA226, AS3935, …) |
-| 4 | InfluxDB 2 + Bucket + Token |
-| 5 | Grafana + Datasource + Dashboard |
+| 4 | InfluxDB 2 + Bucket + Token (**optional**, siehe oben) |
+| 5 | Grafana + Datasource + Dashboard (**optional**) |
 | 6 | Heater+ nach `~/heater_plus`: Python-Skripte Symlink oder Kopie; **`hp_settings.json`** aus Paket kopieren, falls `~/heater_plus` noch keine hat |
 | 7 | Allsky-Modul + Overlay-Templates + Rechte `overlay/extra` |
 | 8 | Systemd-Service `heater_plus.service` |

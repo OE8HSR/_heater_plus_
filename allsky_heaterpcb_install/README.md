@@ -41,6 +41,7 @@ cd ~/allsky_heaterpcb_install
 chmod +x install_allsky_heaterpcb.sh
 sudo ./install_allsky_heaterpcb.sh
 ```
+Optional ohne Influx/Grafana: `sudo ./install_allsky_heaterpcb.sh --minimal` oder `--help` für Optionen.
 
 ### 4. Reboot (falls I2C aktiviert)
 ```bash

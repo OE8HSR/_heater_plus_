@@ -216,6 +216,8 @@ class HeaterPlusController:
 
         # INA226 zero offset (current only; power is derived from V * I)
         self.ina_offset_current = 0.0  # mA
+        # TCS3448: Autogain senkt ASTEP nicht unter Startwert aus hp_settings
+        self._tcs_astep_min = 0
         # Dynamisches Neuladen der Settings (Prüfung auf Änderung der Datei)
         self._settings_mtime = 0.0
         # Sicherheit: Heizer-Fehler (Leistung steigt nicht bei Ansteuerung)
@@ -575,6 +577,7 @@ class HeaterPlusController:
                 self.tcs_gain_index = self.sensor_cfg.tcs_gain_index
                 self.tcs_atime_steps = self.sensor_cfg.tcs_atime_steps
                 self.tcs_astep = self.sensor_cfg.tcs_astep
+                self._tcs_astep_min = max(0, int(self.sensor_cfg.tcs_astep))
                 self.log(f"[Init] TCS3448 OK (atime={self.tcs_atime_steps}, astep={self.tcs_astep}, gain={self.tcs_gain_index}).")
             except Exception as e:
                 self.log_error("[Init] TCS3448 error", e)
@@ -1092,18 +1095,21 @@ class HeaterPlusController:
                 self.data[f"tcs_{name.lower()}"] = int(val)
             self.data["tcs_gain_index"] = self.tcs_gain_index
             self.data["tcs_atime_steps"] = self.tcs_atime_steps
+            self.data["tcs_astep"] = self.tcs_astep
             self.data["tcs_asat"] = int(self.tcs.last_asat)  # Analog saturation
             self.data["tcs_max_count"] = min(
                 65535,
                 (self.tcs_atime_steps + 1) * (self.tcs_astep + 1),
             )
 
-            # Autogain: Gain 0..12, bei Bedarf auch Integration (atime) anpassen
+            # Autogain: Gain 0..12, dann ATIME bis 255, dann ASTEP bis 65535 (max. Integration)
             # TCS3448: max_count = (ATIME+1)*(ASTEP+1), max 65535
             # Zielbereich: 25–70 % von max_count (relative Schwellen, skaliert mit Integration)
             # Hysterese + Cooldown verhindern Springen
             if self.logic_cfg and getattr(self.logic_cfg, "tcs_autogain", True):
                 atime_step = 10
+                astep_step = 6144
+                tcs_astep_max = 65535
                 asat = self.tcs.last_asat
 
                 asat_reduce = False
@@ -1129,6 +1135,16 @@ class HeaterPlusController:
                             self.tcs_autogain_cooldown = 8
                         elif self.tcs_atime_steps >= atime_step:
                             self.tcs_atime_steps = max(1, self.tcs_atime_steps - atime_step)
+                            self.tcs.set_integration_time(
+                                self.tcs_atime_steps, self.tcs_astep
+                            )
+                            self.tcs_max_average.clear()
+                            self.tcs_autogain_cooldown = 8
+                        elif self.tcs_astep > self._tcs_astep_min:
+                            self.tcs_astep = max(
+                                self._tcs_astep_min,
+                                self.tcs_astep - astep_step,
+                            )
                             self.tcs.set_integration_time(
                                 self.tcs_atime_steps, self.tcs_astep
                             )
@@ -1178,6 +1194,16 @@ class HeaterPlusController:
                                 )
                                 self.tcs_max_average.clear()
                                 self.tcs_autogain_cooldown = 6
+                            elif self.tcs_astep > self._tcs_astep_min:
+                                self.tcs_astep = max(
+                                    self._tcs_astep_min,
+                                    self.tcs_astep - astep_step,
+                                )
+                                self.tcs.set_integration_time(
+                                    self.tcs_atime_steps, self.tcs_astep
+                                )
+                                self.tcs_max_average.clear()
+                                self.tcs_autogain_cooldown = 6
                         elif avg < low:
                             if self.tcs_gain_index < 12:
                                 self.tcs_gain_index += 1
@@ -1188,6 +1214,16 @@ class HeaterPlusController:
                                 self.tcs_atime_steps = min(
                                     255,
                                     self.tcs_atime_steps + atime_step,
+                                )
+                                self.tcs.set_integration_time(
+                                    self.tcs_atime_steps, self.tcs_astep
+                                )
+                                self.tcs_max_average.clear()
+                                self.tcs_autogain_cooldown = 6
+                            elif self.tcs_astep < tcs_astep_max:
+                                self.tcs_astep = min(
+                                    tcs_astep_max,
+                                    self.tcs_astep + astep_step,
                                 )
                                 self.tcs.set_integration_time(
                                     self.tcs_atime_steps, self.tcs_astep
